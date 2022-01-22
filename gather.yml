@@ -1,0 +1,26 @@
+---
+- name: Mock Precheck and cluster start/stop script
+  hosts: "{{ host | default('les') }}"
+  tasks:
+
+    - name: Create Directory with Today's Date
+      file:
+              path: "~/{{ ansible_date_time.date }}"
+              state: directory
+              #ignore_errors: yes
+
+    - name: Generating precheck information
+      command: bash -lc "cd ~/{{ ansible_date_time.date }} ; ip r > routing && df -h > df ;  ip a > ip ; crontab -l > crontab ; route -n >> routing ; pcs status > pcsstatus ; multipath -ll > multipath"
+
+    - name: Creating Precheck Tar Archive
+      archive:
+        path: "~/{{ ansible_date_time.date }}"
+        dest: "~/{{ ansible_date_time.date }}/{{ ansible_date_time.date }}.tgz"
+    - name: Fetching Precheck Tarball to this host
+      fetch:
+       src: '~/{{ ansible_date_time.date }}/{{ ansible_date_time.date }}.tgz'
+       dest: '{{ playbook_dir }}'
+    - name:  Removing Temporary Directory from remote system
+      file:
+              path: "~/{{ ansible_date_time.date }}"
+              state: absent
